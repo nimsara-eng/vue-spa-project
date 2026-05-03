@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import {ref, onMounted, computed} from 'vue';
-  import type { Product } from './type';
+  import type { Product, Category } from './type';
   import NavBar from './components/NavBar.vue';
   import ProductCard from './components/ProductCard.vue';
   import FeatureSection from './components/FeatureSection.vue';
@@ -9,6 +9,7 @@
   import CartSidebar from './components/CartSidebar.vue'
   import { useCartStore } from './stores/cartStore'
   import ProductModal from './components/ProductModal.vue';
+  import FilterBar from './components/FilterBar.vue';
 
   const products = ref<Product[]>([]);
   const searchQuery = ref('');
@@ -17,6 +18,18 @@
   const isCartOpen = ref(false)
   const selectedProduct = ref<Product | null>(null);
   const isModalOpen = ref(false);
+  const categories = ref<Category[]>([]);
+  const selectedCategory = ref<string>('');
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('https://dummyjson.com/products/categories')
+      const data = await response.json()
+      categories.value = data
+    } catch(error) {
+      console.error('Error fetching error:', error)
+    }
+  }
 
   const handleProductClick = (product: Product) => {
     selectedProduct.value = product
@@ -55,12 +68,15 @@
 
   onMounted(() => {
     fetchProducts();
+    fetchCategories();
   })
 
   const filteredProducts = computed(() => {
-    return products.value.filter(product =>
-      product.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
+    return products.value.filter(product =>{
+      const matchesSearch = product.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+      const matchesCategory = selectedCategory.value === '' || product.category === selectedCategory.value
+      return matchesSearch && matchesCategory
+    })
   })
 
   const featuredProduct = computed(() => products.value[0] ?? null);
@@ -70,7 +86,12 @@
   <div>
     <div class="min-h-screen bg-white dark:bg-luxury-black transition-colors duration-300">
       <NavBar v-model="searchQuery" @open-cart="isCartOpen = true"/>
+      
       <section id="home" class="pt-28 pb-16 px-4">
+        <FilterBar 
+          :categories="categories"
+          v-model="selectedCategory"
+        />
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <ProductCard 
             v-for="product in filteredProducts" 
