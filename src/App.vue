@@ -10,7 +10,9 @@
   import { useCartStore } from './stores/cartStore'
   import ProductModal from './components/ProductModal.vue';
   import FilterBar from './components/FilterBar.vue';
+  import LoginModal from './components/LoginModal.vue';
 
+  const isLoginOpen = ref(false);
   const products = ref<Product[]>([]);
   const searchQuery = ref('');
   const toasts = ref<ToastItem[]>([]);
@@ -85,7 +87,7 @@
 <template>
   <div>
     <div class="min-h-screen bg-white dark:bg-luxury-black transition-colors duration-300">
-      <NavBar v-model="searchQuery" @open-cart="isCartOpen = true"/>
+      <NavBar v-model="searchQuery" @open-cart="isCartOpen = true" @open-login="isLoginOpen = true"/>
       
       <section id="home" class="pt-28 pb-16 px-4">
         <FilterBar 
@@ -115,7 +117,7 @@
           <p class="text-gray-700 dark:text-luxury-text text-base leading-relaxed mb-6">We are a premium marketplace dedicated to bringing you the finest products from around the world.
           Our curated collection spans technology, lifestyle, beauty, and beyond.
           </p>
-          <div class="grid grid-cols-3 gap-6 mt-12">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
             <div class="border-2 border-luxury-gold/40 bg-gray-50 dark:bg-transparent rounded-xl p-6">
               <p class="text-luxury-gold text-2xl font-bold mb-1">200+</p>
               <p class="text-gray-500 dark:text-luxury-muted text-xs tracking-widest uppercase">Products</p>
@@ -133,6 +135,10 @@
       </section>
       <Toast :toasts="toasts"/>
       <CartSidebar :isOpen="isCartOpen" @close="isCartOpen = false" @checkout="handleCheckout"/>
+      <LoginModal 
+        :isOpen="isLoginOpen"
+        @close="isLoginOpen = false"
+      />
       <ProductModal 
         :product="selectedProduct"
         :isOpen="isModalOpen"
