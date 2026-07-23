@@ -8,20 +8,27 @@
   import type { ToastItem } from './components/Toast.vue';
   import CartSidebar from './components/CartSidebar.vue'
   import { useCartStore } from './stores/cartStore'
+  import { useAuthStore } from './stores/authStore'
   import ProductModal from './components/ProductModal.vue';
   import FilterBar from './components/FilterBar.vue';
   import LoginModal from './components/LoginModal.vue';
+  import AccountModal from './components/AccountModal.vue';
+
+  type AccountView = 'profile' | 'orders' | 'settings'
 
   const isLoginOpen = ref(false);
   const products = ref<Product[]>([]);
   const searchQuery = ref('');
   const toasts = ref<ToastItem[]>([]);
   const cart = useCartStore()
+  const auth = useAuthStore()
   const isCartOpen = ref(false)
   const selectedProduct = ref<Product | null>(null);
   const isModalOpen = ref(false);
   const categories = ref<Category[]>([]);
   const selectedCategory = ref<string>('');
+  const isAccountOpen = ref(false);
+  const activeAccountView = ref<AccountView>('profile');
 
   const fetchCategories = async () => {
     try {
@@ -38,22 +45,52 @@
     isModalOpen.value = true
   }
 
+  const openAccountPanel = (view: AccountView) => {
+    activeAccountView.value = view
+    isAccountOpen.value = true
+  }
+
+  const requireLogin = () => {
+    if (auth.isLoggedIn) return false
+    isLoginOpen.value = true
+    return true
+  }
+
+  const handleAddToCart = (product: Product) => {
+    if (requireLogin()) return
+    cart.addToCart(product)
+    showToast(`${product.title} added to cart`)
+  }
+
   const handleCheckout = () => {
+    if (requireLogin()) return
     showToast(`Order placed! Total: $${cart.cartTotal}`)
     cart.clearCart()
     isCartOpen.value = false
   }
 
   let toastId = 0; 
-  const showToast = (message: string) => {
+  const showToast = (message: string, type: ToastItem['type'] = 'info') => {
     const id = ++toastId;
-    toasts.value.push({ id, message });
+    toasts.value.push({ id, message, type });
     setTimeout(() => {
       toasts.value = toasts.value.filter(t => t.id !== id);
     }, 3000);
   };
 
+  const handleAuthSuccess = (message: string) => {
+    showToast(message, 'success')
+  }
+
+  const handleLogout = () => {
+    auth.logout()
+    isAccountOpen.value = false
+    isCartOpen.value = false
+    showToast('logged out successfully', 'success')
+  }
+
   const handleBuyNow = (product: Product) => {
+    if (requireLogin()) return
     console.log(`Buying: ${product.title}`);
     showToast(`Purchasing: ${product.title}`);
   };
@@ -87,7 +124,15 @@
 <template>
   <div>
     <div class="min-h-screen bg-white dark:bg-luxury-black transition-colors duration-300">
-      <NavBar v-model="searchQuery" @open-cart="isCartOpen = true" @open-login="isLoginOpen = true"/>
+      <NavBar
+        v-model="searchQuery"
+        @open-cart="isCartOpen = true"
+        @open-login="isLoginOpen = true"
+        @open-profile="openAccountPanel('profile')"
+        @open-orders="openAccountPanel('orders')"
+        @open-settings="openAccountPanel('settings')"
+        @logout="handleLogout"
+      />
       
       <section id="home" class="pt-28 pb-16 px-4">
         <FilterBar 
@@ -99,6 +144,7 @@
             v-for="product in filteredProducts" 
             :key="product.id"
             :product="product"
+            @add-to-cart="handleAddToCart"
             @buy-now="handleBuyNow"
             @click="handleProductClick(product)"
           />
@@ -137,11 +183,21 @@
       <CartSidebar :isOpen="isCartOpen" @close="isCartOpen = false" @checkout="handleCheckout"/>
       <LoginModal 
         :isOpen="isLoginOpen"
+        @success="handleAuthSuccess"
         @close="isLoginOpen = false"
+      />
+      <AccountModal
+        :isOpen="isAccountOpen"
+        :activeView="activeAccountView"
+        @change-view="activeAccountView = $event"
+        @logout="handleLogout"
+        @close="isAccountOpen = false"
       />
       <ProductModal 
         :product="selectedProduct"
         :isOpen="isModalOpen"
+        @add-to-cart="handleAddToCart"
+        @buy-now="handleBuyNow"
         @close="isModalOpen = false"
       />
     </div>

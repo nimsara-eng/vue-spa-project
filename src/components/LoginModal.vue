@@ -4,7 +4,10 @@
 
   const auth = useAuthStore()
   const props = defineProps<{ isOpen: boolean }>()
-  const emit = defineEmits<{ (e: 'close'): void }>()
+  const emit = defineEmits<{
+    (e: 'close'): void
+    (e: 'success', message: string): void
+  }>()
 
   // Form state
   const activeTab = ref<'login' | 'signup'>('login')
@@ -40,6 +43,7 @@
       isLoading.value = true
       errorMessage.value = ''
       await auth.login(username.value, password.value)
+      emit('success', 'signed in successfully')
       emit('close')
     } catch (error) {
       errorMessage.value = 'Invalid username or password'
@@ -53,6 +57,7 @@
       isLoading.value = true
       errorMessage.value = ''
       await auth.signup(firstName.value, lastName.value, signupUsername.value, signupPassword.value)
+      emit('success', 'account created successfully')
       emit('close')
     } catch (error) {
       errorMessage.value = 'Signup failed. Please try again.'
@@ -87,7 +92,7 @@
           </div>
 
           <!-- LOGIN FORM -->
-          <div v-if="activeTab === 'login'">
+          <form v-if="activeTab === 'login'" @submit.prevent="handleLogin">
             <h2 class="text-gray-900 dark:text-luxury-text text-2xl font-bold mb-6">Welcome Back</h2>
 
             <div class="mb-4">
@@ -110,6 +115,7 @@
                   class="w-full border border-gray-300 dark:border-luxury-gold/40 rounded-lg px-4 py-3 bg-white dark:bg-luxury-black text-gray-900 dark:text-luxury-text focus:outline-none focus:ring-1 focus:ring-luxury-gold text-sm pr-12"
                 />
                 <button
+                  type="button"
                   @click="showPassword = !showPassword"
                   class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-luxury-gold"
                 >{{ showPassword ? '🙈' : '👁️' }}</button>
@@ -119,7 +125,7 @@
             <p v-if="errorMessage" class="text-red-500 text-sm mb-4">{{ errorMessage }}</p>
 
             <button
-              @click="handleLogin"
+              type="submit"
               :disabled="isLoading"
               class="w-full bg-luxury-gold text-luxury-black font-bold py-3 rounded-xl hover:brightness-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >{{ isLoading ? 'Logging in...' : 'Login' }}</button>
@@ -127,10 +133,10 @@
             <p class="text-gray-400 dark:text-luxury-muted text-xs text-center mt-4">
               Test: <span class="text-luxury-gold">emilys</span> / <span class="text-luxury-gold">emilyspass</span>
             </p>
-          </div>
+          </form>
 
           <!-- SIGNUP FORM -->
-          <div v-if="activeTab === 'signup'">
+          <form v-if="activeTab === 'signup'" @submit.prevent="handleSignup">
             <h2 class="text-gray-900 dark:text-luxury-text text-2xl font-bold mb-6">Create Account</h2>
 
             <div class="flex gap-3 mb-4">
@@ -174,6 +180,7 @@
                   class="w-full border border-gray-300 dark:border-luxury-gold/40 rounded-lg px-4 py-3 bg-white dark:bg-luxury-black text-gray-900 dark:text-luxury-text focus:outline-none focus:ring-1 focus:ring-luxury-gold text-sm pr-12"
                 />
                 <button
+                  type="button"
                   @click="showSignupPassword = !showSignupPassword"
                   class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-luxury-gold"
                 >{{ showSignupPassword ? '🙈' : '👁️' }}</button>
@@ -183,11 +190,11 @@
             <p v-if="errorMessage" class="text-red-500 text-sm mb-4">{{ errorMessage }}</p>
 
             <button
-              @click="handleSignup"
+              type="submit"
               :disabled="isLoading"
               class="w-full bg-luxury-gold text-luxury-black font-bold py-3 rounded-xl hover:brightness-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >{{ isLoading ? 'Creating account...' : 'Sign Up' }}</button>
-          </div>
+          </form>
 
         </div>
       </div>

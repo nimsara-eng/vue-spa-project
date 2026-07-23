@@ -1,11 +1,10 @@
 <script setup lang="ts">
   import type { Product } from '../type';
-  import { useCartStore } from '../stores/cartStore'
-  
-  const cart = useCartStore()
+
   defineProps<{ product: Product }>()
 
   const emit = defineEmits<{
+    (e: 'add-to-cart', product: Product): void
     (e: 'buy-now', product: Product): void
   }>()
 </script>
@@ -19,13 +18,13 @@
 
       <div class="flex gap-2 mt-3">
         <button
-          @click="cart.addToCart(product)"
+          @click.stop="emit('add-to-cart', product)"
           class="flex-1 border border-luxury-gold text-luxury-gold text-xs py-2 rounded-lg hover:bg-luxury-gold hover:text-luxury-black transition-all duration-200 font-semibold"
         >
           Add to Cart
         </button>
         <button 
-          @click="emit('buy-now', product)"
+          @click.stop="emit('buy-now', product)"
           class="flex-1 bg-luxury-gold text-luxury-black text-xs py-2 rounded-lg hover:brightness-110 transition-all duration-200 font-semibold"
         >
           Buy Now
